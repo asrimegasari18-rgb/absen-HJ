@@ -58,9 +58,9 @@ async function home(){
  window.EV=data;
  app.innerHTML='<h2>Pilih Acara</h2>'+(data.length?data.map(e=>{
   const sisa=Math.max(e.kuota-e.terdaftar,0);
-  return `<div class=card><b>${esc(e.title)}</b><small>${esc(e.tipe)} • ${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Sisa kuota: ${sisa}</small>${sisa?`<button onclick="form('${e.id}')">Daftar</button>`:'<div class=full>Kuota penuh</div>'}</div>`}).join(''):'<p class=c>Belum ada acara yang dibuka.</p>');
+  return `<div class=card><b>${esc(e.title)}</b><small>${esc(e.tipe)} • ${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Sisa kuota: ${sisa}</small>${sisa?`<button onclick="showForm('${e.id}')">Daftar</button>`:'<div class=full>Kuota penuh</div>'}</div>`}).join(''):'<p class=c>Belum ada acara yang dibuka.</p>');
 }
-window.form=id=>{
+window.showForm=id=>{
  const e=EV.find(x=>x.id==id);
  app.innerHTML=`<h2>${esc(e.title)}</h2><small>${fmt(e.tanggal)} • ${esc(e.jam)}</small>
  <div class=card><label>Nama<input id=n></label><label>Umur<input id=u type=number></label><label>Domisili<input id=d></label><label>No WA aktif<input id=w type=tel></label><label>Email<input id=m type=email></label>
