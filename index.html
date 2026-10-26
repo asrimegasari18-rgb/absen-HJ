@@ -34,7 +34,7 @@ a{color:var(--p)}footer{text-align:center;padding:10px}footer a{font-size:.8rem;
 </style></head><body>
 <header><img src="logo.jpg" alt="Hamimatul Jannah"><h1>Absensi Kajian Rutin dan Dauroh Hamimatul Jannah</h1></header>
 <main id="app"></main>
-<footer><a href="#admin">Admin</a></footer>
+<footer><a href="#admin">Admin</a><br><small>versi 3</small></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
@@ -45,6 +45,7 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=s=>document.querySelector(s),app=$('#app');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=d=>new Date(d+'T00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+window.onerror=m=>{const d=document.createElement('div');d.className='bad';d.textContent='Error: '+m;document.body.prepend(d)};
 let scanner=null,busy=false;
 async function stopScan(){if(scanner){try{await scanner.stop()}catch(e){}scanner=null}}
 window.onhashchange=route;route();
@@ -58,7 +59,8 @@ async function home(){
  window.EV=data;
  app.innerHTML='<h2>Pilih Acara</h2>'+(data.length?data.map(e=>{
   const sisa=Math.max(e.kuota-e.terdaftar,0);
-  return `<div class=card><b>${esc(e.title)}</b><small>${esc(e.tipe)} • ${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Sisa kuota: ${sisa}</small>${sisa?`<button onclick="showForm('${e.id}')">Daftar</button>`:'<div class=full>Kuota penuh</div>'}</div>`}).join(''):'<p class=c>Belum ada acara yang dibuka.</p>');
+  return `<div class=card><b>${esc(e.title)}</b><small>${esc(e.tipe)} • ${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Sisa kuota: ${sisa}</small>${sisa?`<button class=daf data-id="${e.id}">Daftar</button>`:'<div class=full>Kuota penuh</div>'}</div>`}).join(''):'<p class=c>Belum ada acara yang dibuka.</p>');
+ app.querySelectorAll('.daf').forEach(b=>b.onclick=()=>showForm(b.dataset.id));
 }
 window.showForm=id=>{
  const e=EV.find(x=>x.id==id);
