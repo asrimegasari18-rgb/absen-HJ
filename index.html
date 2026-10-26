@@ -34,7 +34,7 @@ a{color:var(--p)}footer{text-align:center;padding:10px}footer a{font-size:.8rem;
 </style></head><body>
 <header><img src="logo.jpg" alt="Hamimatul Jannah"><h1>Absensi Kajian Rutin dan Dauroh Hamimatul Jannah</h1></header>
 <main id="app"></main>
-<footer><a href="#admin">Admin</a><br><small>versi 3</small></footer>
+<footer><a href="#admin">Admin</a><br><small>versi 4</small></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
@@ -118,7 +118,7 @@ async function tEv(){
  <label>Tanggal<input id=tg type=date></label><label>Jam<input id=j placeholder="09.00 - 11.00 WIB"></label>
  <label>Jumlah peserta maksimal<input id=k type=number value=50></label>
  <label class=ck><input id=a type=checkbox checked>&nbsp;Pendaftaran dibuka</label>
- <button id=sv>Simpan</button><p id=msg class=err></p></div>`+EVS.map((e,i)=>`<div class=card><b>${esc(e.title)}</b><small>${esc(e.tipe)} • ${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Terdaftar ${e.registrations[0].count}/${e.kuota} • ${e.aktif?'Dibuka':'Ditutup'}</small><button class=alt onclick="edit(${i})">Edit</button></div>`).join('');
+ <button id=sv>Simpan</button><p id=msg class=err></p></div>`+EVS.map((e,i)=>`<div class=card><b>${esc(e.title)}</b><small>${esc(e.tipe)} • ${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Terdaftar ${e.registrations[0].count}/${e.kuota} • ${e.aktif?'Dibuka':'Ditutup'}</small><button class=alt onclick="edit(${i})">Edit</button><button class=alt style="color:#b3261e" onclick="hapus(${i})">Hapus</button></div>`).join('');
  $('#sv').onclick=async()=>{
   const r={title:$('#t').value.trim(),tipe:$('#tp').value,tanggal:$('#tg').value,jam:$('#j').value.trim(),kuota:+$('#k').value,aktif:$('#a').checked};
   if(!r.title||!r.tanggal||!r.jam||!(r.kuota>0))return $('#msg').textContent='Lengkapi semua kolom.';
@@ -127,6 +127,12 @@ async function tEv(){
   error?$('#msg').textContent=error.message:tEv();
  };
 }
+window.hapus=async i=>{
+ const e=EVS[i];
+ if(!confirm('Hapus "'+e.title+'" beserta '+e.registrations[0].count+' data pesertanya? Tidak bisa dibatalkan.'))return;
+ const {error}=await sb.from('events').delete().eq('id',e.id);
+ error?alert('Gagal menghapus: '+error.message):tEv();
+};
 window.edit=i=>{const e=EVS[i];
  $('#eid').value=e.id;$('#t').value=e.title;$('#tp').value=e.tipe;$('#tg').value=e.tanggal;$('#j').value=e.jam;$('#k').value=e.kuota;$('#a').checked=e.aktif;
  $('#ft').textContent='Edit Acara';scrollTo(0,0);
