@@ -35,7 +35,7 @@ a{color:var(--p)}footer{text-align:center;padding:10px}footer a{font-size:.8rem;
 </style></head><body>
 <header><img src="logo.jpg" alt="Hamimatul Jannah"><h1>Absensi Kajian Rutin dan Dauroh Hamimatul Jannah</h1></header>
 <main id="app"></main>
-<footer><a href="#admin">Admin</a><br><small>versi 6</small></footer>
+<footer><a href="#admin">Admin</a><br><small>versi 7</small></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
@@ -47,6 +47,15 @@ const $=s=>document.querySelector(s),app=$('#app');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=d=>new Date(d+'T00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 window.onerror=m=>{const d=document.createElement('div');d.className='bad';d.textContent='Error: '+m;document.body.prepend(d)};
+function ask(msg){return new Promise(r=>{
+ const o=document.createElement('div');
+ o.style.cssText='position:fixed;inset:0;background:#0006;display:flex;align-items:center;justify-content:center;padding:20px;z-index:99';
+ o.innerHTML=`<div class=card style="max-width:380px;width:100%"><p style="margin:0">${esc(msg)}</p><button id=ya>Ya, lanjutkan</button><button class=alt id=tdk>Batal</button></div>`;
+ document.body.appendChild(o);
+ o.querySelector('#ya').onclick=()=>{o.remove();r(true)};
+ o.querySelector('#tdk').onclick=()=>{o.remove();r(false)};
+})}
+function note(m,bad){const d=document.createElement('div');d.className=bad?'bad':'ok';d.style.cssText='position:fixed;left:12px;right:12px;top:12px;z-index:100';d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),4500)}
 let scanner=null,busy=false;
 async function stopScan(){if(scanner){try{await scanner.stop()}catch(e){}scanner=null}}
 window.onhashchange=route;route();
@@ -98,8 +107,8 @@ function showQR(e,id,nama,back){
 
 /* ===== ADMIN ===== */
 async function admin(){
- const {data:{session}}=await sb.auth.getSession();
- session?panel():login();
+ const {data:{user}}=await sb.auth.getUser();
+ user?panel():login();
 }
 function login(){
  app.innerHTML=`<h2>Login Admin</h2><div class=card><label>Email<input id=e type=email></label><label>Password<input id=p type=password></label><button id=go>Masuk</button><p id=msg class=err></p></div>`;
@@ -137,9 +146,11 @@ async function tEv(){
 }
 window.hapus=async i=>{
  const e=EVS[i];
- if(!confirm('Hapus "'+e.title+'" beserta '+(e.n+e.w)+' data pesertanya? Tidak bisa dibatalkan.'))return;
- const {error}=await sb.from('events').delete().eq('id',e.id);
- error?alert('Gagal menghapus: '+error.message):tEv();
+ if(!await ask('Hapus "'+e.title+'" beserta '+(e.n+e.w)+' data pesertanya? Tidak bisa dibatalkan.'))return;
+ const {data,error}=await sb.from('events').delete().eq('id',e.id).select('id');
+ if(error)return note('Gagal: '+error.message,1);
+ if(!data||!data.length)return note('Tidak ada data yang berubah. Coba keluar lalu login admin lagi.',1);
+ note('Acara dihapus.');tEv();
 };
 window.edit=i=>{const e=EVS[i];
  $('#eid').value=e.id;$('#t').value=e.title;$('#tp').value=e.tipe;$('#tg').value=e.tanggal;$('#j').value=e.jam;$('#k').value=e.kuota;$('#a').checked=e.aktif;$('#wa').checked=e.wl_aktif;
@@ -179,15 +190,19 @@ function addForm(){
 }
 window.batal=async i=>{
  const r=PL[i];
- if(!confirm(r.wl?'Hapus '+r.nama+' dari waiting list?':'Batalkan pendaftaran '+r.nama+'? QR-nya tidak berlaku lagi dan slot kuota terbuka.'))return;
- const {error}=await sb.from('registrations').delete().eq('id',r.id);
- error?alert('Gagal: '+error.message):reloadPs();
+ if(!await ask(r.wl?'Hapus '+r.nama+' dari waiting list?':'Batalkan pendaftaran '+r.nama+'? QR-nya tidak berlaku lagi dan slot kuota terbuka.'))return;
+ const {data,error}=await sb.from('registrations').delete().eq('id',r.id).select('id');
+ if(error)return note('Gagal: '+error.message,1);
+ if(!data||!data.length)return note('Tidak ada data yang berubah. Coba keluar lalu login admin lagi.',1);
+ note('Berhasil.');reloadPs();
 };
 window.naik=async i=>{
  const r=PL[i],ev=PE.find(x=>x.id==r.event_id),n=PL.filter(x=>!x.wl).length;
- if(n>=ev.kuota&&!confirm('Kuota sudah penuh ('+n+'/'+ev.kuota+'). Tetap naikkan '+r.nama+'?'))return;
- const {error}=await sb.from('registrations').update({wl:false}).eq('id',r.id);
- error?alert('Gagal: '+error.message):showQR(ev,r.id,r.nama,()=>panel('ps'));
+ if(n>=ev.kuota&&!await ask('Kuota sudah penuh ('+n+'/'+ev.kuota+'). Tetap naikkan '+r.nama+'?'))return;
+ const {data,error}=await sb.from('registrations').update({wl:false}).eq('id',r.id).select('id');
+ if(error)return note('Gagal: '+error.message,1);
+ if(!data||!data.length)return note('Tidak ada data yang berubah. Coba keluar lalu login admin lagi.',1);
+ showQR(ev,r.id,r.nama,()=>panel('ps'));
 };
 window.lihatQR=i=>{const r=PL[i],ev=PE.find(x=>x.id==r.event_id);showQR(ev,r.id,r.nama,()=>panel('ps'))};
 async function tSc(){
