@@ -18,6 +18,7 @@ label.ck{flex-direction:row;align-items:center}
 input,select{padding:11px;border:1px solid var(--m);border-radius:10px;font-size:1rem;background:#fff;width:100%}
 input[type=checkbox]{width:auto}
 button{background:var(--p);color:#fff;border:0;border-radius:10px;padding:12px;font-size:1rem;cursor:pointer}
+button.sm{padding:6px 10px;font-size:.8rem}
 button.alt{background:var(--l);color:var(--p)}
 .full{background:var(--l);color:var(--p);padding:10px;border-radius:10px;text-align:center;font-weight:600}
 .c{text-align:center;align-items:center}
@@ -34,7 +35,7 @@ a{color:var(--p)}footer{text-align:center;padding:10px}footer a{font-size:.8rem;
 </style></head><body>
 <header><img src="logo.jpg" alt="Hamimatul Jannah"><h1>Absensi Kajian Rutin dan Dauroh Hamimatul Jannah</h1></header>
 <main id="app"></main>
-<footer><a href="#admin">Admin</a><br><small>versi 4</small></footer>
+<footer><a href="#admin">Admin</a><br><small>versi 6</small></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
@@ -59,14 +60,15 @@ async function home(){
  window.EV=data;
  app.innerHTML='<h2>Pilih Acara</h2>'+(data.length?data.map(e=>{
   const sisa=Math.max(e.kuota-e.terdaftar,0);
-  return `<div class=card><b>${esc(e.title)}</b><small>${esc(e.tipe)} • ${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Sisa kuota: ${sisa}</small>${sisa?`<button class=daf data-id="${e.id}">Daftar</button>`:'<div class=full>Kuota penuh</div>'}</div>`}).join(''):'<p class=c>Belum ada acara yang dibuka.</p>');
+  return `<div class=card><b>${esc(e.title)}</b><small>${esc(e.tipe)} • ${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Sisa kuota: ${sisa}${!sisa&&e.wl_aktif?' • Waiting list: '+e.wl_count+' orang':''}</small>${sisa?`<button class=daf data-id="${e.id}">Daftar</button>`:(e.wl_aktif?`<div class=full>Kuota penuh</div><button class="daf alt" data-id="${e.id}">Daftar Waiting List</button>`:'<div class=full>Kuota penuh</div>')}</div>`}).join(''):'<p class=c>Belum ada acara yang dibuka.</p>');
  app.querySelectorAll('.daf').forEach(b=>b.onclick=()=>showForm(b.dataset.id));
 }
 window.showForm=id=>{
  const e=EV.find(x=>x.id==id);
+ const full=Math.max(e.kuota-e.terdaftar,0)==0;
  app.innerHTML=`<h2>${esc(e.title)}</h2><small>${fmt(e.tanggal)} • ${esc(e.jam)}</small>
- <div class=card><label>Nama<input id=n></label><label>Umur<input id=u type=number></label><label>Domisili<input id=d></label><label>No WA aktif<input id=w type=tel></label><label>Email<input id=m type=email></label>
- <button id=go>Daftar &amp; Dapatkan QR</button><button class=alt onclick="home()">Kembali</button><p id=msg class=err></p></div>`;
+ ${full?'<div class=full>Kuota penuh. Kamu akan masuk Waiting List dan dihubungi lewat WhatsApp jika ada slot.</div>':''}<div class=card><label>Nama<input id=n></label><label>Umur<input id=u type=number></label><label>Domisili<input id=d></label><label>No WA aktif<input id=w type=tel></label><label>Email<input id=m type=email></label>
+ <button id=go>${full?'Daftar Waiting List':'Daftar &amp; Dapatkan QR'}</button><button class=alt onclick="home()">Kembali</button><p id=msg class=err></p></div>`;
  $('#go').onclick=async()=>{
   const v=k=>$('#'+k).value.trim(),msg=$('#msg');
   if(!v('n')||!v('u')||!v('d')||!v('w')||!v('m'))return msg.textContent='Semua kolom wajib diisi.';
@@ -74,11 +76,14 @@ window.showForm=id=>{
   $('#go').disabled=true;msg.textContent='';
   const {data,error}=await sb.rpc('register',{p_event:id,p_nama:v('n'),p_umur:+v('u'),p_domisili:v('d'),p_wa:v('w'),p_email:v('m')});
   if(error){$('#go').disabled=false;return msg.textContent=/PENUH/.test(error.message)?'Maaf, kuota sudah penuh.':/TUTUP/.test(error.message)?'Pendaftaran sudah ditutup.':'Gagal mendaftar. Coba lagi.'}
-  showQR(e,data,v('n'));
+  const nm=v('n');
+  if(data.wl){app.innerHTML=`<div class="card c"><h2>Masuk Waiting List ✅</h2><b>${esc(nm)}</b><small>${esc(e.title)}<br>${fmt(e.tanggal)} • ${esc(e.jam)}</small><div class=full>Nomor antrean: ${data.pos}</div><small>Kami akan menghubungi lewat WhatsApp jika ada slot. QR diberikan jika kamu naik dari waiting list.</small><button class=alt onclick="home()">Selesai</button></div>`;return}
+  showQR(e,data.id,nm);
  };
 };
-function showQR(e,id,nama){
- app.innerHTML=`<div class="card c"><h2>Pendaftaran Berhasil ✅</h2><b>${esc(nama)}</b><small>${esc(e.title)}<br>${fmt(e.tanggal)} • ${esc(e.jam)}</small><div id=qr class=qr></div><button id=sv>Simpan QR ke Galeri</button><small>Simpan QR ini, lalu tunjukkan saat tiba di lokasi.</small><button class=alt onclick="home()">Selesai</button></div>`;
+function showQR(e,id,nama,back){
+ app.innerHTML=`<div class="card c"><h2>Pendaftaran Berhasil ✅</h2><b>${esc(nama)}</b><small>${esc(e.title)}<br>${fmt(e.tanggal)} • ${esc(e.jam)}</small><div id=qr class=qr></div><button id=sv>Simpan QR ke Galeri</button><small>Simpan QR ini, lalu tunjukkan saat tiba di lokasi.</small><button class=alt id=bk>Selesai</button></div>`;
+ $('#bk').onclick=()=>back?back():home();
  new QRCode($('#qr'),{text:id,width:240,height:240,correctLevel:QRCode.CorrectLevel.M});
  $('#sv').onclick=()=>{
   const src=$('#qr canvas'),c=document.createElement('canvas');c.width=360;c.height=450;
@@ -111,16 +116,19 @@ async function panel(t='ev'){
 }
 window.panel=panel;
 async function tEv(){
- const {data}=await sb.from('events').select('*,registrations(count)').order('tanggal',{ascending:false});
+ const {data}=await sb.from('events').select('*').order('tanggal',{ascending:false});
+ const {data:rg}=await sb.from('registrations').select('event_id,wl');
+ (data||[]).forEach(e=>{const l=(rg||[]).filter(x=>x.event_id==e.id);e.n=l.filter(x=>!x.wl).length;e.w=l.filter(x=>x.wl).length});
  window.EVS=data||[];
  $('#box').innerHTML=`<div class=card><h3 id=ft style="margin:0">Tambah Acara</h3><input type=hidden id=eid>
  <label>Tema<input id=t></label><label>Jenis<select id=tp><option>Kajian Rutin</option><option>Dauroh</option></select></label>
  <label>Tanggal<input id=tg type=date></label><label>Jam<input id=j placeholder="09.00 - 11.00 WIB"></label>
  <label>Jumlah peserta maksimal<input id=k type=number value=50></label>
  <label class=ck><input id=a type=checkbox checked>&nbsp;Pendaftaran dibuka</label>
- <button id=sv>Simpan</button><p id=msg class=err></p></div>`+EVS.map((e,i)=>`<div class=card><b>${esc(e.title)}</b><small>${esc(e.tipe)} • ${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Terdaftar ${e.registrations[0].count}/${e.kuota} • ${e.aktif?'Dibuka':'Ditutup'}</small><button class=alt onclick="edit(${i})">Edit</button><button class=alt style="color:#b3261e" onclick="hapus(${i})">Hapus</button></div>`).join('');
+ <label class=ck><input id=wa type=checkbox checked>&nbsp;Aktifkan waiting list saat kuota penuh</label>
+ <button id=sv>Simpan</button><p id=msg class=err></p></div>`+EVS.map((e,i)=>`<div class=card><b>${esc(e.title)}</b><small>${esc(e.tipe)} • ${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Terdaftar ${e.n}/${e.kuota} • Waiting list ${e.w} • ${e.aktif?'Dibuka':'Ditutup'}</small><button class=alt onclick="edit(${i})">Edit</button><button class=alt style="color:#b3261e" onclick="hapus(${i})">Hapus</button></div>`).join('');
  $('#sv').onclick=async()=>{
-  const r={title:$('#t').value.trim(),tipe:$('#tp').value,tanggal:$('#tg').value,jam:$('#j').value.trim(),kuota:+$('#k').value,aktif:$('#a').checked};
+  const r={title:$('#t').value.trim(),tipe:$('#tp').value,tanggal:$('#tg').value,jam:$('#j').value.trim(),kuota:+$('#k').value,aktif:$('#a').checked,wl_aktif:$('#wa').checked};
   if(!r.title||!r.tanggal||!r.jam||!(r.kuota>0))return $('#msg').textContent='Lengkapi semua kolom.';
   const id=$('#eid').value;
   const {error}=id?await sb.from('events').update(r).eq('id',id):await sb.from('events').insert(r);
@@ -129,16 +137,17 @@ async function tEv(){
 }
 window.hapus=async i=>{
  const e=EVS[i];
- if(!confirm('Hapus "'+e.title+'" beserta '+e.registrations[0].count+' data pesertanya? Tidak bisa dibatalkan.'))return;
+ if(!confirm('Hapus "'+e.title+'" beserta '+(e.n+e.w)+' data pesertanya? Tidak bisa dibatalkan.'))return;
  const {error}=await sb.from('events').delete().eq('id',e.id);
  error?alert('Gagal menghapus: '+error.message):tEv();
 };
 window.edit=i=>{const e=EVS[i];
- $('#eid').value=e.id;$('#t').value=e.title;$('#tp').value=e.tipe;$('#tg').value=e.tanggal;$('#j').value=e.jam;$('#k').value=e.kuota;$('#a').checked=e.aktif;
+ $('#eid').value=e.id;$('#t').value=e.title;$('#tp').value=e.tipe;$('#tg').value=e.tanggal;$('#j').value=e.jam;$('#k').value=e.kuota;$('#a').checked=e.aktif;$('#wa').checked=e.wl_aktif;
  $('#ft').textContent='Edit Acara';scrollTo(0,0);
 };
 async function evPicker(){
- const {data}=await sb.from('events').select('id,title,tanggal').order('tanggal',{ascending:false});
+ const {data}=await sb.from('events').select('id,title,tanggal,jam,kuota').order('tanggal',{ascending:false});
+ window.PE=data||[];
  $('#box').innerHTML=`<select id=se>${(data||[]).map(e=>`<option value="${e.id}">${esc(e.title)} (${e.tanggal})</option>`).join('')}</select><div id=out></div>`;
  return data&&data.length;
 }
@@ -146,11 +155,41 @@ async function tPs(){
  if(!await evPicker())return $('#out').innerHTML='<p class=c>Belum ada acara.</p>';
  const load=async()=>{
   const {data}=await sb.from('registrations').select('*').eq('event_id',$('#se').value).order('created_at');
-  const h=data.filter(r=>r.hadir_at).length;
-  $('#out').innerHTML=`<h3>Terdaftar ${data.length} • Hadir ${h}</h3><div class=tbl><table><tr><th>Nama</th><th>Umur</th><th>Domisili</th><th>WA</th><th>Email</th><th>Hadir</th></tr>${data.map(r=>`<tr><td>${esc(r.nama)}</td><td>${r.umur}</td><td>${esc(r.domisili)}</td><td>${esc(r.wa)}</td><td>${esc(r.email)}</td><td>${r.hadir_at?'✅':'-'}</td></tr>`).join('')}</table></div>`;
+  window.PL=data;
+  const ev=PE.find(x=>x.id==$('#se').value);
+  const main=data.map((r,i)=>[r,i]).filter(x=>!x[0].wl),wl=data.map((r,i)=>[r,i]).filter(x=>x[0].wl);
+  const h=main.filter(x=>x[0].hadir_at).length;
+  $('#out').innerHTML=`<button id=add style="width:100%;margin:10px 0">+ Tambah Peserta (admin)</button><div id=af></div><h3>Terdaftar ${main.length}/${ev.kuota} • Hadir ${h}</h3><div class=tbl><table><tr><th>Nama</th><th>Umur</th><th>Domisili</th><th>WA</th><th>Email</th><th>Hadir</th><th>Aksi</th></tr>${main.map(([r,i])=>`<tr><td>${esc(r.nama)}</td><td>${r.umur??''}</td><td>${esc(r.domisili)}</td><td>${esc(r.wa)}</td><td>${esc(r.email)}</td><td>${r.hadir_at?'✅':'-'}</td><td><button class="alt sm" onclick="lihatQR(${i})">QR</button> <button class="alt sm" style="color:#b3261e" onclick="batal(${i})">Batalkan</button></td></tr>`).join('')}</table></div>
+  <h3>Waiting List (${wl.length})</h3>${wl.length?`<div class=tbl><table><tr><th>No</th><th>Nama</th><th>Domisili</th><th>WA</th><th>Email</th><th>Aksi</th></tr>${wl.map(([r,i],k)=>`<tr><td>${k+1}</td><td>${esc(r.nama)}</td><td>${esc(r.domisili)}</td><td>${esc(r.wa)}</td><td>${esc(r.email)}</td><td><button class="sm" onclick="naik(${i})">Naikkan</button> <button class="alt sm" style="color:#b3261e" onclick="batal(${i})">Hapus</button></td></tr>`).join('')}</table></div>`:'<small>Belum ada yang mengantre.</small>'}`;
+  $('#add').onclick=addForm;
  };
+ window.reloadPs=load;
  $('#se').onchange=load;load();
 }
+function addForm(){
+ $('#af').innerHTML=`<div class=card><h3 style="margin:0">Tambah Peserta</h3><small>Tidak terpengaruh batas kuota.</small><label>Nama<input id=an></label><label>Umur<input id=au type=number></label><label>Domisili<input id=ad></label><label>No WA<input id=aw type=tel></label><label>Email<input id=am type=email></label><button id=ag>Simpan &amp; Buat QR</button><p id=amsg class=err></p></div>`;
+ $('#ag').onclick=async()=>{
+  const v=k=>$('#'+k).value.trim();
+  if(!v('an')||!v('aw'))return $('#amsg').textContent='Nama dan No WA wajib diisi.';
+  const ev=PE.find(x=>x.id==$('#se').value);
+  const {data,error}=await sb.from('registrations').insert({event_id:ev.id,nama:v('an'),umur:v('au')?+v('au'):null,domisili:v('ad'),wa:v('aw'),email:v('am')}).select('id').single();
+  if(error)return $('#amsg').textContent=/duplicate|unique/i.test(error.message)?'No WA ini sudah terdaftar di acara ini.':'Gagal: '+error.message;
+  showQR(ev,data.id,v('an'),()=>panel('ps'));
+ };
+}
+window.batal=async i=>{
+ const r=PL[i];
+ if(!confirm(r.wl?'Hapus '+r.nama+' dari waiting list?':'Batalkan pendaftaran '+r.nama+'? QR-nya tidak berlaku lagi dan slot kuota terbuka.'))return;
+ const {error}=await sb.from('registrations').delete().eq('id',r.id);
+ error?alert('Gagal: '+error.message):reloadPs();
+};
+window.naik=async i=>{
+ const r=PL[i],ev=PE.find(x=>x.id==r.event_id),n=PL.filter(x=>!x.wl).length;
+ if(n>=ev.kuota&&!confirm('Kuota sudah penuh ('+n+'/'+ev.kuota+'). Tetap naikkan '+r.nama+'?'))return;
+ const {error}=await sb.from('registrations').update({wl:false}).eq('id',r.id);
+ error?alert('Gagal: '+error.message):showQR(ev,r.id,r.nama,()=>panel('ps'));
+};
+window.lihatQR=i=>{const r=PL[i],ev=PE.find(x=>x.id==r.event_id);showQR(ev,r.id,r.nama,()=>panel('ps'))};
 async function tSc(){
  if(!await evPicker())return $('#out').innerHTML='<p class=c>Buat acara dulu.</p>';
  $('#out').innerHTML='<button id=st style="margin:10px 0;width:100%">Mulai Scan</button><div id=rd></div><div id=res></div>';
@@ -164,9 +203,10 @@ async function onScan(txt){
  if(busy)return;busy=true;setTimeout(()=>busy=false,2500);
  const res=$('#res');
  if(!/^[0-9a-f-]{36}$/i.test(txt))return res.innerHTML='<div class=bad>QR tidak dikenali.</div>';
- const {data}=await sb.from('registrations').select('id,nama,event_id,hadir_at').eq('id',txt).maybeSingle();
+ const {data}=await sb.from('registrations').select('id,nama,event_id,hadir_at,wl').eq('id',txt).maybeSingle();
  if(!data)return res.innerHTML='<div class=bad>❌ Peserta tidak ditemukan.</div>';
  if(data.event_id!==$('#se').value)return res.innerHTML=`<div class=bad>❌ ${esc(data.nama)} terdaftar di acara lain.</div>`;
+ if(data.wl)return res.innerHTML=`<div class=bad>⚠️ ${esc(data.nama)} masih di waiting list.</div>`;
  if(data.hadir_at)return res.innerHTML=`<div class=bad>⚠️ ${esc(data.nama)} sudah tercatat hadir sebelumnya.</div>`;
  const {error}=await sb.from('registrations').update({hadir_at:new Date().toISOString()}).eq('id',txt);
  res.innerHTML=error?'<div class=bad>Gagal mencatat.</div>':`<div class=ok>✅ ${esc(data.nama)} — hadir tercatat</div>`;
