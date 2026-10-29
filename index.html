@@ -323,6 +323,51 @@ window.kirimWA=i=>{
  o.querySelector('#w3').onclick=()=>go('terima');
  o.querySelector('#w0').onclick=()=>o.remove();
 };
+ const SERTIFIKAT={
+ '2026-11-04':'IMG-20261029-WA0022.jpg'
+};
+function muatJspdf(){return new Promise((ok,no)=>{if(window.jspdf)return ok();const c=document.createElement('script');c.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';c.onload=ok;c.onerror=no;document.head.appendChild(c)})}
+function muatGambar(src){return new Promise((ok,no)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=no;im.src=src})}
+window.buatSertifikat=async i=>{
+ const r=PL[i],ev=PE.find(x=>x.id==r.event_id),f=SERTIFIKAT[ev.tanggal];
+ if(!f)return note('Desain sertifikat untuk acara ini belum ada.',1);
+ try{await muatJspdf()}catch(e){return note('Gagal memuat modul PDF. Cek internet.',1)}
+ let im;try{im=await muatGambar(f)}catch(e){return note('Gambar sertifikat tidak ditemukan.',1)}
+ try{await document.fonts.load('700 100px "Dancing Script"')}catch(e){}
+ const W=im.naturalWidth,H=im.naturalHeight,c=document.createElement('canvas');
+ c.width=W;c.height=H;
+ const x=c.getContext('2d');x.drawImage(im,0,0,W,H);
+ x.fillStyle='#5a2750';x.textAlign='center';x.textBaseline='middle';
+ let fs=W*0.06;const nm=r.nama.trim();
+ x.font='700 '+fs+'px "Dancing Script",cursive';
+ while(x.measureText(nm).width>W*0.6&&fs>20){fs-=2;x.font='700 '+fs+'px "Dancing Script",cursive'}
+ x.fillText(nm,W/2,H*0.44);
+ const {jsPDF}=window.jspdf,h=297*H/W;
+ const pdf=new jsPDF({orientation:'l',unit:'mm',format:[297,h]});
+ pdf.addImage(c.toDataURL('image/jpeg',0.92),'JPEG',0,0,297,h);
+ const blob=pdf.output('blob');
+ const nama='Sertifikat-'+r.nama.replace(/[^A-Za-z0-9]+/g,'_').slice(0,30)+'.pdf';
+ const file=new File([blob],nama,{type:'application/pdf'});
+ if(navigator.canShare&&navigator.canShare({files:[file]})){
+  try{await navigator.share({files:[file],title:'Sertifikat '+r.nama});return}
+  catch(e){if(e.name==='AbortError')return}
+ }
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nama;a.click();
+ setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+};
+window.kirimWA=i=>{
+ const r=PL[i],ev=PE.find(x=>x.id==r.event_id),ada=!!SERTIFIKAT[ev.tanggal],sertOk=r.hadir_at&&ada;
+ const o=document.createElement('div');
+ o.style.cssText='position:fixed;inset:0;background:#0006;display:flex;align-items:center;justify-content:center;padding:20px;z-index:99';
+ o.innerHTML=`<div class=card style="max-width:380px;width:100%"><b>Kirim ke ${esc(r.nama)}</b><button id=w1>Chat kosong (japri)</button><button id=w2>Pengingat acara</button><button id=w3 ${r.hadir_at?'':'disabled style="opacity:.5"'}>Terima kasih${r.hadir_at?'':' (belum hadir)'}</button><button id=w4 ${sertOk?'':'disabled style="opacity:.5"'}>Sertifikat (PDF)${!ada?' (belum ada desain)':(r.hadir_at?'':' (belum hadir)')}</button><button class=alt id=w0>Batal</button></div>`;
+ document.body.appendChild(o);
+ const go=j=>{o.remove();waKirim(i,j)};
+ o.querySelector('#w1').onclick=()=>go('kosong');
+ o.querySelector('#w2').onclick=()=>go('pengingat');
+ o.querySelector('#w3').onclick=()=>go('terima');
+ o.querySelector('#w4').onclick=()=>{o.remove();buatSertifikat(i)};
+ o.querySelector('#w0').onclick=()=>o.remove();
+};
 window.lihatQR=i=>{const r=PL[i],ev=PE.find(x=>x.id==r.event_id);showQR(ev,r.id,r.nama,()=>panel('ps'))};
 async function tSc(){
  if(!await evPicker())return $('#out').innerHTML='<p class=c>Buat acara dulu.</p>';
