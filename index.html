@@ -273,6 +273,56 @@ window.naik=async i=>{
  ].join('\n');
  window.open('https://wa.me/'+n+'?text='+encodeURIComponent(pesan),'_blank');
 };
+ window.waKirim=(i,jenis)=>{
+ const r=PL[i],ev=PE.find(x=>x.id==r.event_id);
+ let n=String(r.wa).replace(/\D/g,'');
+ if(n.startsWith('0'))n='62'+n.slice(1);
+ else if(n.startsWith('8'))n='62'+n;
+ let pesan='';
+ if(jenis==='pengingat')pesan=[
+  'بِسْمِ اللَّهِ',
+  '',
+  'Assalaamu’alaikum warahmatullaahi wabarakaatuh.',
+  '',
+  `Ahlan wa sahlan, Teteh ${r.nama} 🌷`,
+  '',
+  `Ini adalah pesan pengingat dari Hamimatul Jannah MT terkait ${ev.title} yang insyaaAllah akan dilaksanakan besok, ${fmt(ev.tanggal)}, ${ev.jam}`,
+  '',
+  'Jangan lupa untuk hadir tepat waktu dan membawa QR pendaftaran anty yaa. 🤍',
+  '',
+  'Jazaakillahu khayran atas perhatian dan kerja samanya.',
+  '',
+  'Yassaarallaahu lanaa wa lakunnaa. ♥️',
+  '',
+  '🎀 Admin Mican 🎀'
+ ].join('\n');
+ if(jenis==='terima')pesan=[
+  'بِسْمِ اللَّهِ',
+  '',
+  'Assalaamu’alaikum warahmatullaahi wabarakaatuh 🌷',
+  '',
+  `Jazaakillaahu khayran, Teteh ${r.nama}, sudah hadir di ${ev.title}`,
+  '',
+  'Semoga menjadi wasilah ilmu yang bermanfaat dan pahala jariyah bagi kita semua. Aamiin.',
+  '',
+  'Hamimatul Jannah MT',
+  '',
+  '🎀 Admin Mican 🎀'
+ ].join('\n');
+ window.open('https://wa.me/'+n+(pesan?'?text='+encodeURIComponent(pesan):''),'_blank');
+};
+window.kirimWA=i=>{
+ const r=PL[i];
+ const o=document.createElement('div');
+ o.style.cssText='position:fixed;inset:0;background:#0006;display:flex;align-items:center;justify-content:center;padding:20px;z-index:99';
+ o.innerHTML=`<div class=card style="max-width:380px;width:100%"><b>Kirim WA ke ${esc(r.nama)}</b><button id=w1>Chat kosong (japri)</button><button id=w2>Pengingat acara</button><button id=w3 ${r.hadir_at?'':'disabled style="opacity:.5"'}>Terima kasih${r.hadir_at?'':' (belum hadir)'}</button><button class=alt id=w0>Batal</button></div>`;
+ document.body.appendChild(o);
+ const go=j=>{o.remove();waKirim(i,j)};
+ o.querySelector('#w1').onclick=()=>go('kosong');
+ o.querySelector('#w2').onclick=()=>go('pengingat');
+ o.querySelector('#w3').onclick=()=>go('terima');
+ o.querySelector('#w0').onclick=()=>o.remove();
+};
 window.lihatQR=i=>{const r=PL[i],ev=PE.find(x=>x.id==r.event_id);showQR(ev,r.id,r.nama,()=>panel('ps'))};
 async function tSc(){
  if(!await evPicker())return $('#out').innerHTML='<p class=c>Buat acara dulu.</p>';
