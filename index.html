@@ -113,7 +113,7 @@ window.showForm=id=>{
   const {data,error}=await sb.rpc('register',{p_event:id,p_nama:v('n'),p_umur:+v('u'),p_domisili:v('d'),p_wa:v('w'),p_email:v('m')});
   if(error){$('#go').disabled=false;return msg.textContent=/PENUH/.test(error.message)?'Maaf, kuota sudah penuh.':/TUTUP/.test(error.message)?'Pendaftaran sudah ditutup.':'Gagal mendaftar. Coba lagi.'}
   const nm=v('n');
-  if(data.wl){app.innerHTML=`<div class="card c"><h2>Masuk Waiting List ✅</h2><b>${esc(nm)}</b><small>${esc(e.title)}<br>${fmt(e.tanggal)} • ${esc(e.jam)}</small><div class=full>Nomor antrean: ${data.pos}</div><small>Kami akan menghubungi lewat WhatsApp jika ada slot. QR diberikan jika kamu naik dari waiting list.</small><button class=alt onclick="home()">Selesai</button></div>`;return}
+  if(data.wl){app.innerHTML=`<div class="card c"><h2>Masuk Waiting List ✅</h2><b>${esc(nm)}</b><small>${esc(e.title)}<br>${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Kami akan menghubungi lewat WhatsApp jika ada slot. QR diberikan jika kamu naik dari waiting list.</small><button class=alt onclick="home()">Selesai</button></div>`;return}
   showQR(e,data.id,nm);
  };
 };
