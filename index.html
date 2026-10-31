@@ -338,7 +338,7 @@ window.buatSertifikat=async i=>{
  c.width=W;c.height=H;
  const x=c.getContext('2d');x.drawImage(im,0,0,W,H);
  x.fillStyle='#5a2750';x.textAlign='center';x.textBaseline='middle';
- let fs=W*0.06;const nm=r.nama.trim();
+ let fs=W*0.06;const nm=r.nama.trim().toLowerCase().replace(/(^|\s)\S/g,m=>m.toUpperCase());
  x.font='700 '+fs+'px "Dancing Script",cursive';
  while(x.measureText(nm).width>W*0.6&&fs>20){fs-=2;x.font='700 '+fs+'px "Dancing Script",cursive'}
  x.fillText(nm,W/2,H*0.44);
