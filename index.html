@@ -384,6 +384,26 @@ window.batalHadir=async i=>{
  if(!data||!data.length)return note('Tidak ada data yang berubah. Coba keluar lalu login admin lagi.',1);
  note('Status hadir '+r.nama+' dibatalkan.');reloadPs();
 };
+ window.unduh=async()=>{
+ try{await loadXlsx()}catch(e){return note('Gagal memuat modul Excel. Cek internet.',1)}
+ const ev=PE.find(x=>x.id==$('#se').value);
+ const buat=(list,wl)=>list.map((r,k)=>{
+  const o={'No':k+1,'Nama':r.nama,'Umur':r.umur??'','Domisili':r.domisili||'','No WA':String(r.wa),'Email':r.email||''};
+  if(!wl){o['Hadir']=r.hadir_at?'Ya':'Tidak';o['Waktu Hadir']=r.hadir_at?new Date(r.hadir_at).toLocaleString('id-ID'):''}
+  return o;
+ });
+ const utama=PL.filter(r=>!r.wl),antre=PL.filter(r=>r.wl);
+ const wb=XLSX.utils.book_new();
+ const ws1=XLSX.utils.json_to_sheet(buat(utama,false));
+ ws1['!cols']=[{wch:5},{wch:26},{wch:7},{wch:20},{wch:16},{wch:28},{wch:8},{wch:20}];
+ XLSX.utils.book_append_sheet(wb,ws1,'Terdaftar');
+ if(antre.length){
+  const ws2=XLSX.utils.json_to_sheet(buat(antre,true));
+  ws2['!cols']=[{wch:5},{wch:26},{wch:7},{wch:20},{wch:16},{wch:28}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Waiting List');
+ }
+ XLSX.writeFile(wb,'Peserta-'+ev.title.replace(/[^A-Za-z0-9]+/g,'_').slice(0,30)+'.xlsx');
+};
 window.lihatQR=i=>{const r=PL[i],ev=PE.find(x=>x.id==r.event_id);showQR(ev,r.id,r.nama,()=>panel('ps'))};
 async function tSc(){
  if(!await evPicker())return $('#out').innerHTML='<p class=c>Buat acara dulu.</p>';
