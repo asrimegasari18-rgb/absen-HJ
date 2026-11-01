@@ -412,6 +412,34 @@ window.batalHadir=async i=>{
   tr.style.display=(!q||teks.includes(q))?'':'none';
  });
 };
+ let acBunyi=null;
+function bunyi(ok){
+ try{
+  acBunyi=acBunyi||new (window.AudioContext||window.webkitAudioContext)();
+  if(acBunyi.state==='suspended')acBunyi.resume();
+  const nada=ok?[[880,0,.12]]:[[330,0,.18],[330,.25,.18]];
+  nada.forEach(([f,t,d])=>{
+   const o=acBunyi.createOscillator(),g=acBunyi.createGain(),w=acBunyi.currentTime;
+   o.frequency.value=f;o.type='sine';
+   g.gain.setValueAtTime(.0001,w+t);
+   g.gain.exponentialRampToValueAtTime(.4,w+t+.02);
+   g.gain.exponentialRampToValueAtTime(.0001,w+t+d);
+   o.connect(g);g.connect(acBunyi.destination);
+   o.start(w+t);o.stop(w+t+d+.05);
+  });
+ }catch(e){}
+ try{if(navigator.vibrate)navigator.vibrate(ok?120:[200,100,200])}catch(e){}
+}
+new MutationObserver(ms=>{
+ for(const m of ms){
+  if(m.target.id!=='res')continue;
+  for(const n of m.addedNodes){
+   if(n.nodeType!==1)continue;
+   if(n.classList.contains('ok'))bunyi(true);
+   else if(n.classList.contains('bad'))bunyi(false);
+  }
+ }
+}).observe(document.body,{childList:true,subtree:true});
 window.lihatQR=i=>{const r=PL[i],ev=PE.find(x=>x.id==r.event_id);showQR(ev,r.id,r.nama,()=>panel('ps'))};
 async function tSc(){
  if(!await evPicker())return $('#out').innerHTML='<p class=c>Buat acara dulu.</p>';
