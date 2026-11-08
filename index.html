@@ -212,10 +212,10 @@ async function tEv(){
  <label>Tanggal<input id=tg type=date></label><label>Jam<input id=j placeholder="09.00 - 11.00 WIB"></label>
  <label>Jumlah peserta maksimal<input id=k type=number value=50></label>
  <label class=ck><input id=a type=checkbox checked>&nbsp;Pendaftaran dibuka</label>
- <label class=ck><input id=wa type=checkbox checked>&nbsp;Aktifkan waiting list saat kuota penuh</label>
- <button id=sv>Simpan</button><p id=msg class=err></p></div>`+EVS.map((e,i)=>`<div class=card><b>${esc(e.title)}</b><small>${esc(e.tipe)} • ${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Terdaftar ${e.n}/${e.kuota} • Waiting list ${e.w} • ${e.aktif?'Dibuka':'Ditutup'}</small><button class=alt onclick="edit(${i})">Edit</button><button class=alt style="color:#b3261e" onclick="hapus(${i})">Hapus</button></div>`).join('');
+ <label class=ck><input id=wa type=checkbox checked>&nbsp;Aktifkan waiting list saat kuota penuh</label><label class=ck><input id=ma type=checkbox>&nbsp;Khusus member dulu (early registration)</label>
+ <button id=sv>Simpan</button><p id=msg class=err></p></div>`+EVS.map((e,i)=>`<div class=card><b>${esc(e.title)}</b><small>${esc(e.tipe)} • ${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Terdaftar ${e.n}/${e.kuota} • Waiting list ${e.w} • ${e.aktif?'Dibuka':'Ditutup'}${e.member_awal?' • Khusus member':''}</small><button class=alt onclick="edit(${i})">Edit</button><button class=alt style="color:#b3261e" onclick="hapus(${i})">Hapus</button></div>`).join('');
  $('#sv').onclick=async()=>{
-  const r={title:$('#t').value.trim(),tipe:$('#tp').value,tanggal:$('#tg').value,jam:$('#j').value.trim(),kuota:+$('#k').value,aktif:$('#a').checked,wl_aktif:$('#wa').checked};
+  const r={title:$('#t').value.trim(),tipe:$('#tp').value,tanggal:$('#tg').value,jam:$('#j').value.trim(),kuota:+$('#k').value,aktif:$('#a').checked,wl_aktif:$('#wa').checked,member_awal:$('#ma').checked};
   if(!r.title||!r.tanggal||!r.jam||!(r.kuota>0))return $('#msg').textContent='Lengkapi semua kolom.';
   const id=$('#eid').value;
   const {error}=id?await sb.from('events').update(r).eq('id',id):await sb.from('events').insert(r);
@@ -231,7 +231,7 @@ window.hapus=async i=>{
  note('Acara dihapus.');tEv();
 };
 window.edit=i=>{const e=EVS[i];
- $('#eid').value=e.id;$('#t').value=e.title;$('#tp').value=e.tipe;$('#tg').value=e.tanggal;$('#j').value=e.jam;$('#k').value=e.kuota;$('#a').checked=e.aktif;$('#wa').checked=e.wl_aktif;
+ $('#eid').value=e.id;$('#t').value=e.title;$('#tp').value=e.tipe;$('#tg').value=e.tanggal;$('#j').value=e.jam;$('#k').value=e.kuota;$('#a').checked=e.aktif;$('#wa').checked=e.wl_aktif;$('#ma').checked=!!e.member_awal;
  $('#ft').textContent='Edit Acara';scrollTo(0,0);
 };
 async function evPicker(){
