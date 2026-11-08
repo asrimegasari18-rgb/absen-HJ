@@ -59,7 +59,7 @@ header,main,.run,.sp,footer{position:relative;z-index:1}
 <div id="run" class="run"><span>Ada taman-taman surga di dunia ini. Maka jangan lewatkan kesempatan untuk duduk di dalamnya... &nbsp;&nbsp;&nbsp;🌸&nbsp;&nbsp;&nbsp; Ada taman-taman surga di dunia ini. Maka jangan lewatkan kesempatan untuk duduk di dalamnya...</span></div>
 <main id="app"></main>
 <div id="sp" class="sp"></div>
-<footer><a href="#admin">Admin</a><br><small>versi 20</small></footer>
+<footer><a href="#member">Member</a> • <a href="#admin">Admin</a><br><small>versi 21</small></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
@@ -86,7 +86,7 @@ let scanner=null,busy=false;
 async function stopScan(){if(scanner){try{await scanner.stop()}catch(e){}scanner=null}}
 window.onhashchange=route;route();
 function sponsors(){const b=$('#sp');$('#run').style.display=location.hash.startsWith('#admin')?'none':'';b.innerHTML=(SPONSORS.length&&!location.hash.startsWith('#admin'))?`<h3>Didukung oleh</h3><div class=spl>${SPONSORS.map(f=>`<img src="${esc(f)}" alt="Sponsor">`).join('')}</div>`:''}
-async function route(){sponsors();await stopScan();location.hash.startsWith('#admin')?admin():home()}
+async function route(){sponsors();await stopScan();const h=location.hash;h.startsWith('#admin')?admin():h.startsWith('#member')?member():home()}
 
 /* ===== PESERTA ===== */
 async function home(){
@@ -131,7 +131,43 @@ function showQR(e,id,nama,back){
   const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='QR-'+nama.replace(/\s+/g,'_')+'.png';a.click();
  };
 }
-
+/* ===== MEMBER ===== */
+async function member(){
+ const {data:{user}}=await sb.auth.getUser();
+ user?memberHome(user):memberForm('masuk');
+}
+function memberForm(mode){
+ const dft=mode==='daftar';
+ app.innerHTML=`<h2>${dft?'Daftar Member':'Login Member'}</h2><div class=card>${dft?'<label>Nama<input id=mn></label><label>No WA aktif<input id=mw type=tel></label>':''}<label>Email<input id=me type=email></label><label>Password<input id=mp type=password></label><button id=mg>${dft?'Daftar':'Masuk'}</button><button class=alt id=ms>${dft?'Sudah punya akun? Masuk':'Belum punya akun? Daftar'}</button><p id=mm class=err></p></div>`;
+ $('#ms').onclick=()=>memberForm(dft?'masuk':'daftar');
+ $('#mg').onclick=async()=>{
+  const v=k=>$('#'+k).value.trim(),m=$('#mm');
+  if(!v('me')||!$('#mp').value)return m.textContent='Email dan password wajib diisi.';
+  if(dft){
+   if(!v('mn')||!v('mw'))return m.textContent='Nama dan No WA wajib diisi.';
+   if($('#mp').value.length<6)return m.textContent='Password minimal 6 karakter.';
+   const {data,error}=await sb.auth.signUp({email:v('me'),password:$('#mp').value,options:{data:{nama:v('mn'),wa:v('mw')}}});
+   if(error)return m.textContent='Gagal daftar: '+error.message;
+   if(data.session)return member();
+   m.className='ok';m.textContent='Cek email kamu untuk konfirmasi, lalu masuk.';
+  }else{
+   const {error}=await sb.auth.signInWithPassword({email:v('me'),password:$('#mp').value});
+   error?m.textContent='Email atau password salah.':member();
+  }
+ };
+}
+async function memberHome(user){
+ let {data:mb}=await sb.from('members').select('*').eq('user_id',user.id).maybeSingle();
+ if(!mb){
+  const md=user.user_metadata||{};
+  const r=await sb.from('members').insert({user_id:user.id,nama:md.nama||user.email,email:user.email,no_wa:md.wa||''}).select('*').single();
+  mb=r.data;
+ }
+ const st=mb?mb.status:'pending';
+ const teks=st==='approved'?'Akunmu sudah aktif. Fitur member segera hadir.':st==='rejected'?'Pendaftaran member belum disetujui. Silakan hubungi admin.':'Akunmu menunggu persetujuan admin. Silakan cek lagi nanti.';
+ app.innerHTML=`<h2>Halo, ${esc(mb?mb.nama:user.email)}</h2><div class=card><p style="margin:0">${teks}</p><button class=alt id=mk>Keluar</button></div>`;
+ $('#mk').onclick=()=>sb.auth.signOut().then(member);
+}
 /* ===== ADMIN ===== */
 async function admin(){
  const {data:{user}}=await sb.auth.getUser();
