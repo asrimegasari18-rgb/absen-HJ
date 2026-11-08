@@ -168,6 +168,21 @@ async function memberHome(user){
  app.innerHTML=`<h2>Halo, ${esc(mb?mb.nama:user.email)}</h2><div class=card><p style="margin:0">${teks}</p><button class=alt id=mk>Keluar</button></div>`;
  $('#mk').onclick=()=>sb.auth.signOut().then(member);
 }
+async function tMb(){
+ const {data,error}=await sb.from('members').select('*').order('created_at',{ascending:false});
+ if(error)return $('#box').innerHTML='<p class=c>Gagal memuat: '+esc(error.message)+'</p>';
+ window.MB=data||[];
+ const lbl={pending:'Menunggu',approved:'Aktif',rejected:'Ditolak'};
+ $('#box').innerHTML='<h3>Member ('+MB.length+')</h3>'+(MB.length?`<div class=tbl><table><tr><th>Nama</th><th>WA</th><th>Email</th><th>Status</th><th>Aksi</th></tr>${MB.map((m,i)=>`<tr><td>${esc(m.nama)}</td><td>${esc(m.no_wa)}</td><td>${esc(m.email)}</td><td>${lbl[m.status]||esc(m.status)}</td><td>${m.status!=='approved'?`<button class="sm" onclick="ubahMember(${i},'approved')">Setujui</button> `:''}${m.status!=='rejected'?`<button class="alt sm" style="color:#b3261e" onclick="ubahMember(${i},'rejected')">Tolak</button>`:''}</td></tr>`).join('')}</table></div>`:'<small>Belum ada member.</small>');
+}
+window.ubahMember=async(i,st)=>{
+ const m=MB[i];
+ if(!await ask((st==='approved'?'Setujui ':'Tolak ')+m.nama+' sebagai member?'))return;
+ const {data,error}=await sb.from('members').update({status:st}).eq('id',m.id).select('id');
+ if(error)return note('Gagal: '+error.message,1);
+ if(!data||!data.length)return note('Tidak ada data yang berubah. Coba keluar lalu login admin lagi.',1);
+ note('Status member diperbarui.');tMb();
+}; 
 /* ===== ADMIN ===== */
 async function admin(){
  const {data:{user}}=await sb.auth.getUser();
@@ -180,7 +195,7 @@ function login(){
   error?$('#msg').textContent='Email atau password salah.':panel();
  };
 }
-const TABS=[['ev','Acara'],['ps','Peserta'],['sc','Scan']];
+const TABS=[['ev','Acara'],['ps','Peserta'],['sc','Scan'],['mb','Member']];
 async function panel(t='ev'){
  await stopScan();
  app.innerHTML=`<nav>${TABS.map(([k,v])=>`<button class="tab ${k==t?'on':''}" onclick="panel('${k}')">${v}</button>`).join('')}<button class=tab onclick="sb.auth.signOut().then(login)">Keluar</button></nav><div id=box></div>`;
