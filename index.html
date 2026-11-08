@@ -59,7 +59,7 @@ header,main,.run,.sp,footer{position:relative;z-index:1}
 <div id="run" class="run"><span>Ada taman-taman surga di dunia ini. Maka jangan lewatkan kesempatan untuk duduk di dalamnya... &nbsp;&nbsp;&nbsp;🌸&nbsp;&nbsp;&nbsp; Ada taman-taman surga di dunia ini. Maka jangan lewatkan kesempatan untuk duduk di dalamnya...</span></div>
 <main id="app"></main>
 <div id="sp" class="sp"></div>
-<footer><a href="#member">Member</a> • <a href="#admin">Admin</a><br><small>versi 21</small></footer>
+<footer><a href="#member">Member</a> • <a href="#admin">Admin</a><br><small>versi 22</small></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
@@ -199,7 +199,7 @@ const TABS=[['ev','Acara'],['ps','Peserta'],['sc','Scan'],['mb','Member']];
 async function panel(t='ev'){
  await stopScan();
  app.innerHTML=`<nav>${TABS.map(([k,v])=>`<button class="tab ${k==t?'on':''}" onclick="panel('${k}')">${v}</button>`).join('')}<button class=tab onclick="sb.auth.signOut().then(login)">Keluar</button></nav><div id=box></div>`;
- ({ev:tEv,ps:tPs,sc:tSc})[t]();
+ try{await ({ev:tEv,ps:tPs,sc:tSc,mb:tMb})[t]()}catch(e){$('#box').innerHTML='<p class=err>Error: '+esc(e.message)+'</p>'}
 }
 window.panel=panel;
 async function tEv(){
