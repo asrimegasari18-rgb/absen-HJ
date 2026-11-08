@@ -166,7 +166,7 @@ async function memberHome(user){
  const st=mb?mb.status:'pending';
  const teks=st==='approved'?'Akunmu sudah aktif. Fitur member segera hadir.':st==='rejected'?'Pendaftaran member belum disetujui. Silakan hubungi admin.':'Akunmu menunggu persetujuan admin. Silakan cek lagi nanti.';
  app.innerHTML=`<h2>Ahlan wa sahlan bikunna yaa Ummahaat</h2><div class=card><p style="margin:0">${teks}</p><button class=alt id=mk>Keluar</button></div>`;
- $('#mk').onclick=()=>sb.auth.signOut().then(member);
+ $('#mk').onclick=()=>sb.auth.signOut().then(member);if(st==='approved'){const {data:h}=await sb.rpc('my_history');const L=h||[];const dr=L.filter(x=>!x.wl).length;const hd=L.filter(x=>!x.wl&&x.hadir_at).length;app.insertAdjacentHTML('beforeend',`<h3>Kehadiranku</h3><div class=card><b>Terdaftar ${dr} kali • Hadir ${hd} kali</b>${L.length?L.map(x=>`<small>${esc(x.title)} • ${fmt(x.tanggal)} • ${x.wl?'Waiting list':(x.hadir_at?'✅ Hadir':'Belum hadir')}</small>`).join(''):'<small>Belum ada riwayat.</small>'}</div>`)}
 }
 async function tMb(){
  const {data,error}=await sb.from('members').select('*').order('created_at',{ascending:false});
