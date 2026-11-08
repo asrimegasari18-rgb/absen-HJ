@@ -93,10 +93,10 @@ async function home(){
  app.innerHTML='<p class=c>Memuat…</p>';
  const {data,error}=await sb.rpc('list_events');
  if(error)return app.innerHTML='<p class=c>Gagal memuat. Coba lagi.</p>';
- window.EV=data;
+ window.EV=data;let okM=false;try{const {data:{user:mu}}=await sb.auth.getUser();if(mu){const {data:mm}=await sb.from('members').select('status').eq('user_id',mu.id).maybeSingle();okM=!!mm&&mm.status==='approved'}}catch(e){}window.OKM=okM;
  app.innerHTML='<h2>Pilih Acara</h2>'+(data.length?data.map(e=>{
   const sisa=Math.max(e.kuota-e.terdaftar,0);
-  return `<div class=card><b>${esc(e.title)}</b><small>${esc(e.tipe)} • ${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Sisa kuota: ${sisa}${!sisa&&e.wl_aktif?' • Waiting list: '+e.wl_count+' orang':''}</small>${sisa?`<button class=daf data-id="${e.id}">Daftar</button>`:(e.wl_aktif?`<div class=full>Kuota penuh</div><button class="daf alt" data-id="${e.id}">Daftar Waiting List</button>`:'<div class=full>Kuota penuh</div>')}</div>`}).join(''):'<p class=c>Belum ada acara yang dibuka.</p>');
+  return `<div class=card><b>${esc(e.title)}</b><small>${esc(e.tipe)} • ${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Sisa kuota: ${sisa}${!sisa&&e.wl_aktif?' • Waiting list: '+e.wl_count+' orang':''}</small>${(e.member_awal&&!OKM)?'<div class=full>Pendaftaran khusus member dulu</div><a href="#member" style="text-decoration:none"><button class=alt style="width:100%">Login Member</button></a>':sisa?`<button class=daf data-id="${e.id}">Daftar</button>`:(e.wl_aktif?`<div class=full>Kuota penuh</div><button class="daf alt" data-id="${e.id}">Daftar Waiting List</button>`:'<div class=full>Kuota penuh</div>')}</div>`}).join(''):'<p class=c>Belum ada acara yang dibuka.</p>');
  app.querySelectorAll('.daf').forEach(b=>b.onclick=()=>showForm(b.dataset.id));
 }
 window.showForm=id=>{
