@@ -165,7 +165,7 @@ async function memberHome(user){
  }
  const st=mb?mb.status:'pending';
  const teks=st==='approved'?'Akunmu sudah aktif. Fitur member segera hadir.':st==='rejected'?'Pendaftaran member belum disetujui. Silakan hubungi admin.':'Akunmu menunggu persetujuan admin. Silakan cek lagi nanti.';
- app.innerHTML=`<h2>Halo, ${esc(mb?mb.nama:user.email)}</h2><div class=card><p style="margin:0">${teks}</p><button class=alt id=mk>Keluar</button></div>`;
+ app.innerHTML=`<h2>Ahlan wa sahlan bikunna yaa Ummahaat</h2><div class=card><p style="margin:0">${teks}</p><button class=alt id=mk>Keluar</button></div>`;
  $('#mk').onclick=()=>sb.auth.signOut().then(member);
 }
 async function tMb(){
