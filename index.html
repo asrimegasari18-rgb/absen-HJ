@@ -111,7 +111,7 @@ window.showForm=id=>{
   if(!/^\S+@\S+\.\S+$/.test(v('m')))return msg.textContent='Format email belum benar.';
   $('#go').disabled=true;msg.textContent='';
   const {data,error}=await sb.rpc('register',{p_event:id,p_nama:v('n'),p_umur:+v('u'),p_domisili:v('d'),p_wa:v('w'),p_email:v('m')});
-  if(error){$('#go').disabled=false;return msg.textContent=/PENUH/.test(error.message)?'Maaf, kuota sudah penuh.':/TUTUP/.test(error.message)?'Pendaftaran sudah ditutup.':'Gagal mendaftar. Coba lagi.'}
+  if(error){$('#go').disabled=false;return msg.textContent=/PENUH/.test(error.message)?'Maaf, kuota sudah penuh.':/TUTUP/.test(error.message)?'Pendaftaran sudah ditutup.':/SUDAH_TERDAFTAR/.test(error.message)?'No WA ini sudah terdaftar di acara ini. Hubungi admin kalau butuh QR-nya lagi.':'Gagal mendaftar. Coba lagi.'}
   try{const {data:{user:mu}}=await sb.auth.getUser();if(mu&&data&&data.id)await sb.rpc('link_member',{p_reg:data.id})}catch(e){}const nm=v('n');
   if(data.wl){app.innerHTML=`<div class="card c"><h2>Masuk Waiting List ✅</h2><b>${esc(nm)}</b><small>${esc(e.title)}<br>${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Kami akan menghubungi lewat WhatsApp jika ada slot. QR diberikan jika kamu naik dari waiting list.</small><button class=alt onclick="home()">Selesai</button></div>`;return}
   showQR(e,data.id,nm);
