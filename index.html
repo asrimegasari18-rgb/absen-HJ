@@ -103,14 +103,14 @@ window.showForm=id=>{
  const e=EV.find(x=>x.id==id);
  const full=Math.max(e.kuota-e.terdaftar,0)==0;
  app.innerHTML=`<h2>${esc(e.title)}</h2><small>${fmt(e.tanggal)} • ${esc(e.jam)}</small>
- ${full?'<div class=full>Kuota penuh. Kamu akan masuk Waiting List dan dihubungi lewat WhatsApp jika ada slot.</div>':''}<div class=card><label>Nama<input id=n></label><label>Umur<input id=u type=number></label><label>Domisili<input id=d></label><label>No WA aktif<input id=w type=tel></label><label>Email<input id=m type=email></label>
+ ${full?'<div class=full>Kuota penuh. Kamu akan masuk Waiting List dan dihubungi lewat WhatsApp jika ada slot.</div>':''}<div class=card><label>Nama<input id=n></label><label>Umur<input id=u type=number></label><label>Domisili<input id=d></label><label>No WA aktif<input id=w type=tel></label><label>Email<input id=m type=email></label><style>.tnc{background:var(--l);border-radius:12px;padding:10px 12px;font-size:.85rem;line-height:1.45}.tnc ol{margin:6px 0 0;padding-left:18px}.tnc li{margin:4px 0}</style><div class=tnc><b>Syarat &amp; Ketentuan</b><br>Dengan melakukan registrasi, jamaah menyatakan bersedia untuk:<ol><li>Menginformasikan kepada panitia apabila berhalangan hadir agar kuota dapat diberikan kepada jamaah dalam daftar Waiting List (WL).</li><li>Menjaga kebersihan, kerapian, dan ketertiban tempat pelaksanaan kegiatan.</li><li>Tidak membawa anak berusia di bawah 6 tahun ke lokasi kajian/dauroh.</li><li>Menggunakan QR Code registrasi secara pribadi dan tidak memindahtangankannya kepada orang lain.</li><li>Menjaga adab serta mengikuti arahan panitia selama kegiatan berlangsung.</li></ol></div><label class=ck><input id=tc type=checkbox>&nbsp;Saya telah membaca dan menyetujui syarat &amp; ketentuan di atas.</label>
  <button id=go>${full?'Daftar Waiting List':'Daftar &amp; Dapatkan QR'}</button><button class=alt onclick="home()">Kembali</button><p id=msg class=err></p></div>`;
  $('#go').onclick=async()=>{
   const v=k=>$('#'+k).value.trim(),msg=$('#msg');
   if(!v('n')||!v('u')||!v('d')||!v('w')||!v('m'))return msg.textContent='Semua kolom wajib diisi.';
-  if(!/^\S+@\S+\.\S+$/.test(v('m')))return msg.textContent='Format email belum benar.';
+  if(!/^\S+@\S+\.\S+$/.test(v('m')))return msg.textContent='Format email belum benar.';if(!$('#tc').checked)return msg.textContent='Centang persetujuan syarat & ketentuan dulu.';
   $('#go').disabled=true;msg.textContent='';
-  const {data,error}=await sb.rpc('register',{p_event:id,p_nama:v('n'),p_umur:+v('u'),p_domisili:v('d'),p_wa:v('w'),p_email:v('m')});
+  const {data,error}=await sb.rpc('register',{p_event:id,p_nama:v('n'),p_umur:+v('u'),p_domisili:v('d'),p_wa:v('w'),p_email:v('m'),p_tnc:true});
   if(error){$('#go').disabled=false;return msg.textContent=/PENUH/.test(error.message)?'Maaf, kuota sudah penuh.':/TUTUP/.test(error.message)?'Pendaftaran sudah ditutup.':/SUDAH_TERDAFTAR/.test(error.message)?'No WA ini sudah terdaftar di acara ini. Hubungi admin kalau butuh QR-nya lagi.':'Gagal mendaftar. Coba lagi.'}
   try{const {data:{user:mu}}=await sb.auth.getUser();if(mu&&data&&data.id)await sb.rpc('link_member',{p_reg:data.id})}catch(e){}const nm=v('n');
   if(data.wl){app.innerHTML=`<div class="card c"><h2>Masuk Waiting List ✅</h2><b>${esc(nm)}</b><small>${esc(e.title)}<br>${fmt(e.tanggal)} • ${esc(e.jam)}</small><small>Kami akan menghubungi lewat WhatsApp jika ada slot. QR diberikan jika kamu naik dari waiting list.</small><button class=alt onclick="home()">Selesai</button></div>`;return}
